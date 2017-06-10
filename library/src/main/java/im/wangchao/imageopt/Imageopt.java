@@ -194,48 +194,51 @@ public class Imageopt {
                 @Override public void run() {
                     try {
                         createCompressImageFile();
+
+                        Bitmap originBitmap = BitmapUtils.decodeSampledBitmapFromResource(originalImagePath, reqWidth, reqHeight);
+                        // rotate bitmap if possible
+                        originBitmap = BitmapUtils.rotate(originBitmap, BitmapUtils.exifRotateAngle(originalImagePath), false);
+
+                        final String compressPath = mCompressFile.getAbsolutePath();
+
+                        long available = 0L;
+                        int innerQuality = mQuality;
+                        do {
+                            compress(originBitmap, compressPath, innerQuality);
+
+                            if (mTargetSize == 0) {
+                                break;
+                            }
+
+                            try {
+                                FileInputStream fis = new FileInputStream(compressPath);
+                                available = fis.available();
+                            } catch (Exception ignore) {
+                            }
+
+                            if (available <= mTargetSize) {
+                                break;
+                            } else {
+                                innerQuality -= 5;
+                            }
+
+                        } while (innerQuality > mMinQuality);
+
+                        final int finalQuality = innerQuality;
+                        AndroidExecutors.uiThread().execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.success(Imageopt.this, mCompressFile, finalQuality);
+                            }
+                        });
                     } catch (final Exception e) {
                         AndroidExecutors.uiThread().execute(new Runnable() {
-                            @Override public void run() {
+                            @Override
+                            public void run() {
                                 listener.failure(e);
                             }
                         });
                     }
-
-                    Bitmap originBitmap = BitmapUtils.decodeSampledBitmapFromResource(originalImagePath, reqWidth, reqHeight);
-                    // rotate bitmap if possible
-                    originBitmap = BitmapUtils.rotate(originBitmap, BitmapUtils.exifRotateAngle(originalImagePath));
-
-                    final String compressPath = mCompressFile.getAbsolutePath();
-
-                    long available = 0L;
-                    int innerQuality = mQuality;
-                    do {
-                        compress(originBitmap, compressPath, innerQuality);
-
-                        if (mTargetSize == 0) {
-                            break;
-                        }
-
-                        try {
-                            FileInputStream fis = new FileInputStream(compressPath);
-                            available = fis.available();
-                        } catch (Exception ignore) {}
-
-                        if (available <= mTargetSize) {
-                            break;
-                        } else {
-                            innerQuality -= 5;
-                        }
-
-                    } while (innerQuality > mMinQuality);
-
-                    final int finalQuality = innerQuality;
-                    AndroidExecutors.uiThread().execute(new Runnable() {
-                        @Override public void run() {
-                            listener.success(Imageopt.this, mCompressFile, finalQuality);
-                        }
-                    });
                 }
             });
         } catch (final Exception e) {
@@ -247,7 +250,7 @@ public class Imageopt {
         }
     }
 
-    private boolean compress(Bitmap bitmap, String outfile, int quality) {
+    private boolean compress(Bitmap bitmap, String outfile, int quality) throws Exception{
         boolean isSuccess = false;
         FileOutputStream fos = null;
         try {
@@ -255,10 +258,10 @@ public class Imageopt {
             isSuccess = bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fos);
         } catch (FileNotFoundException e) {
             isSuccess = false;
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } catch (Exception e) {
             //avoid v6.0+ occur crash without permission
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } finally {
             if (fos != null){
                 try {
