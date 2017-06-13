@@ -226,7 +226,7 @@ import java.io.InputStream;
         matrix.postRotate(angle);
         Bitmap rotatedBitmap = Bitmap.createBitmap(originBitmap,
                 0, 0, originBitmap.getWidth(), originBitmap.getHeight(), matrix, true);
-        if (recycle && !originBitmap.isRecycled()) {
+        if (originBitmap != rotatedBitmap && recycle && !originBitmap.isRecycled()) {
             originBitmap.recycle();
         }
         return rotatedBitmap;
@@ -244,7 +244,7 @@ import java.io.InputStream;
      */
     public static Bitmap scale(Bitmap originBitmap, int dstWidth, int dstHeight, boolean recycle) {
         Bitmap scaledBitmap = Bitmap.createScaledBitmap(originBitmap, dstWidth, dstHeight, true);
-        if (recycle && originBitmap != null && !originBitmap.isRecycled()) {
+        if (originBitmap != scaledBitmap && recycle && originBitmap != null && !originBitmap.isRecycled()) {
             originBitmap.recycle();
         }
         return scaledBitmap;
@@ -329,7 +329,7 @@ import java.io.InputStream;
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
         canvas.drawBitmap(originBitmap, rect, rect, paint);
 
-        if (recycle && !originBitmap.isRecycled()) {
+        if (originBitmap != roundBitmap && recycle && !originBitmap.isRecycled()) {
             originBitmap.recycle();
         }
 
@@ -353,7 +353,7 @@ import java.io.InputStream;
         int top = - (originBitmap.getHeight() - min) / 2;
         canvas.drawBitmap(originBitmap, left, top, paint);
 
-        if (recycle && !originBitmap.isRecycled()) {
+        if (originBitmap != circleBitmap && recycle && !originBitmap.isRecycled()) {
             originBitmap.recycle();
         }
 
@@ -375,7 +375,7 @@ import java.io.InputStream;
         paint.setColorFilter(colorMatrixColorFilter);
         canvas.drawBitmap(originBitmap, 0, 0, paint);
 
-        if (recycle && !originBitmap.isRecycled()) {
+        if (originBitmap != grayBitmap && recycle && !originBitmap.isRecycled()) {
             originBitmap.recycle();
         }
 

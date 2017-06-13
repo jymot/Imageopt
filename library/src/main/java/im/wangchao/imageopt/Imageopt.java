@@ -197,7 +197,7 @@ public class Imageopt {
 
                         Bitmap originBitmap = BitmapUtils.decodeSampledBitmapFromResource(originalImagePath, reqWidth, reqHeight);
                         // rotate bitmap if possible
-                        originBitmap = BitmapUtils.rotate(originBitmap, BitmapUtils.exifRotateAngle(originalImagePath), false);
+                        originBitmap = BitmapUtils.rotate(originBitmap, BitmapUtils.exifRotateAngle(originalImagePath));
 
                         final String compressPath = mCompressFile.getAbsolutePath();
 
