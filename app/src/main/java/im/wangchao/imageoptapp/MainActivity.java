@@ -164,6 +164,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 Bitmap bitmap = me.thumbnail(targetW, targetH);
                 Log.e("wcwcwc", "normal compress image -> \n" +
+                        ">>> file name: " + saveFile.getName() + "\n" +
                         ">>> quality: " + quality + "\n" +
                         ">>> height: " + options.outHeight + "\n" +
                         ">>> width: " + options.outWidth + "\n" +
@@ -174,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void failure(Exception e) {
-
+                Log.e("wcwcwc", e.getMessage(), e);
             }
         });
 

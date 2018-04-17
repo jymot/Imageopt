@@ -25,6 +25,8 @@ public class Imageopt {
 
     private final Context mContext;
 
+    private Bitmap.CompressFormat mCompressFormat;
+    private final Bitmap.Config mBitmapConfig;
     private final File mTargetFile;
     private final File mCompressFile;
     private final File mThumbnailFile;
@@ -43,6 +45,8 @@ public class Imageopt {
         this.mQuality = builder.mQuality;
         this.mMinQuality = builder.mMinQuality;
         this.mTargetSize = builder.mTargetSize;
+        this.mBitmapConfig = builder.mBitmapConfig;
+        this.mCompressFormat = builder.mCompressFormat;
     }
 
     public static void clearAllCache(Context context){
@@ -153,7 +157,7 @@ public class Imageopt {
             @Override public void run() {
                 try {
                     createThumbnailImageFile();
-                    compress(thumbnailBm, mThumbnailFile.getAbsolutePath(), mQuality);
+                    realCompress(thumbnailBm, mThumbnailFile.getAbsolutePath(), mQuality);
                 } catch (Exception ignore) {}
             }
         });
@@ -195,7 +199,7 @@ public class Imageopt {
                     try {
                         createCompressImageFile();
 
-                        Bitmap originBitmap = BitmapUtils.decodeSampledBitmapFromResource(originalImagePath, reqWidth, reqHeight);
+                        Bitmap originBitmap = BitmapUtils.decodeBitmapAndScale(originalImagePath, reqWidth, reqHeight, mBitmapConfig);
                         // rotate bitmap if possible
                         originBitmap = BitmapUtils.rotate(originBitmap, BitmapUtils.exifRotateAngle(originalImagePath));
 
@@ -204,7 +208,7 @@ public class Imageopt {
                         long available = 0L;
                         int innerQuality = mQuality;
                         do {
-                            compress(originBitmap, compressPath, innerQuality);
+                            realCompress(originBitmap, compressPath, innerQuality);
 
                             if (mTargetSize == 0) {
                                 break;
@@ -250,12 +254,12 @@ public class Imageopt {
         }
     }
 
-    private boolean compress(Bitmap bitmap, String outfile, int quality) throws Exception{
+    private boolean realCompress(Bitmap bitmap, String outfile, int quality) {
         boolean isSuccess = false;
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(outfile);
-            isSuccess = bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fos);
+            isSuccess = bitmap.compress(mCompressFormat, quality, fos);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         } catch (Exception e) {
@@ -285,10 +289,11 @@ public class Imageopt {
         mThumbnailFile.createNewFile();
     }
 
-    private static File getCompressFile(Context context, String cacheKey){
+    private static File getCompressFile(Context context, File targetFile, String cacheKey){
         try {
             String imageFileName = COMPRESS_PREFIX + cacheKey;
-            String suffix = ".jpg";
+            String filePath = targetFile.getAbsolutePath();
+            String suffix = filePath.substring(filePath.lastIndexOf("."));
             File storageDir = context.getExternalCacheDir();
             return new File(storageDir, imageFileName + suffix);
         } catch (Exception e) {
@@ -296,10 +301,11 @@ public class Imageopt {
         }
     }
 
-    private static File getThumbnailFile(Context context, String cacheKey){
+    private static File getThumbnailFile(Context context, File targetFile, String cacheKey){
         try {
             String imageFileName = THUMBNAIL_PREFIX + cacheKey;
-            String suffix = ".jpg";
+            String filePath = targetFile.getAbsolutePath();
+            String suffix = filePath.substring(filePath.lastIndexOf("."));
             File storageDir = context.getExternalCacheDir();
             return new File(storageDir, imageFileName + suffix);
         } catch (Exception e){
@@ -318,6 +324,8 @@ public class Imageopt {
         int mQuality = 70;
         int mMinQuality = 20;
         long mTargetSize = 0L;
+        Bitmap.Config mBitmapConfig = Bitmap.Config.ARGB_8888;
+        Bitmap.CompressFormat mCompressFormat = Bitmap.CompressFormat.JPEG;
 
         Builder(Context context){
             this.mContext = context.getApplicationContext();
@@ -332,6 +340,8 @@ public class Imageopt {
             this.mQuality = imageopt.mQuality;
             this.mMinQuality = imageopt.mMinQuality;
             this.mTargetFile = imageopt.mTargetFile;
+            this.mBitmapConfig = imageopt.mBitmapConfig;
+            this.mCompressFormat = imageopt.mCompressFormat;
         }
 
         public Builder quality(int quality){
@@ -349,14 +359,24 @@ public class Imageopt {
             return this;
         }
 
+        public Builder bitmapConfig(Bitmap.Config config){
+            this.mBitmapConfig = config;
+            return this;
+        }
+
+        public Builder compressFormat(Bitmap.CompressFormat format){
+            this.mCompressFormat = format;
+            return this;
+        }
+
         public Builder load(File targetFile){
             this.mTargetFile = checkNotNull(targetFile, "load file can not be null.");
             if (!this.mTargetFile.exists()){
                 throw new RuntimeException("Target file(" + targetFile.getAbsolutePath() + ") is not exists.");
             }
             this.mThumbnailCacheKey = DigestUtils.md5(this.mTargetFile.getAbsolutePath());
-            this.mThumbnailFile = getThumbnailFile(this.mContext, this.mThumbnailCacheKey);
-            this.mCompressFile = getCompressFile(this.mContext, this.mThumbnailCacheKey);
+            this.mThumbnailFile = getThumbnailFile(this.mContext, this.mTargetFile, this.mThumbnailCacheKey);
+            this.mCompressFile = getCompressFile(this.mContext, this.mTargetFile, this.mThumbnailCacheKey);
             return this;
         }
 
