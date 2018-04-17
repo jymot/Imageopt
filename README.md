@@ -2,7 +2,7 @@
 
 ## Gradle
 ```bash
-compile 'im.wangchao:imageopt:0.1.2'
+compile 'im.wangchao:imageopt:0.2.0'
 ```
 
 ## TODO
