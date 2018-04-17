@@ -257,7 +257,6 @@ public class Imageopt {
             fos = new FileOutputStream(outfile);
             isSuccess = bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fos);
         } catch (FileNotFoundException e) {
-            isSuccess = false;
             throw new RuntimeException(e);
         } catch (Exception e) {
             //avoid v6.0+ occur crash without permission
